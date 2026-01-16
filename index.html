@@ -10,33 +10,88 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f1220;color:white}
-.screen{display:none;padding:20px}
+body{margin:0;font-family:Arial;color:white}
+
+/* ===== LOGIN BACKGROUND IMAGE ===== */
+.auth-bg{
+  background:
+    linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1)),
+    url("login-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding-left:60px;
+}
+
+.login-card{
+  width:360px;
+}
+
+.login-card h1{
+  margin-bottom:30px;
+  letter-spacing:2px;
+}
+
+.login-card input{
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  background:transparent;
+  border:none;
+  border-bottom:2px solid #f4c430;
+  color:white;
+}
+
+.login-card input::placeholder{color:#ddd}
+
+.login-card button{
+  width:100%;
+  padding:14px;
+  margin-top:25px;
+  background:#f4c430;
+  color:#0b6b5f;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+}
+
+.forgot{text-align:right;font-size:13px;margin-top:8px;cursor:pointer}
+.link{text-align:center;margin-top:15px;cursor:pointer}
+.error{color:red;text-align:center;margin-top:10px}
+
+/* ===== APP UI ===== */
+.screen{display:none;padding:20px;background:#0f1220;min-height:100vh}
 .card{background:#161a2e;padding:20px;border-radius:12px;max-width:360px;margin:15px auto}
 input,button,select{width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px}
 button{background:#8f7cff;color:white}
 .nav{display:flex;justify-content:space-around;background:#161a2e;padding:10px;position:fixed;bottom:0;width:100%}
 .balance{font-size:26px;color:#8f7cff}
-.link{color:#8f7cff;text-align:center;margin-top:10px;cursor:pointer}
-.error{color:red;text-align:center}
 </style>
 </head>
 
 <body>
 
-<!-- AUTH -->
-<div id="screen-auth" class="screen">
-<div class="card">
-<h2 id="authTitle">Login</h2>
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button id="authBtn" onclick="submitAuth()">Login</button>
-<div class="link" onclick="toggleAuth()">Don't have an account? Sign up</div>
-<div class="error" id="error"></div>
-</div>
+<!-- ===== AUTH ===== -->
+<div id="screen-auth" class="screen auth-bg">
+  <div class="login-card">
+    <h1 id="authTitle">WELCOME</h1>
+
+    <input id="email" placeholder="Username / Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <div class="forgot" onclick="forgotPassword()">Forgot Password?</div>
+
+    <button id="authBtn" onclick="submitAuth()">LOGIN</button>
+
+    <div class="link" onclick="toggleAuth()">Don't have an account? Sign up</div>
+    <div class="error" id="error"></div>
+  </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ===== DASHBOARD ===== -->
 <div id="screen-dashboard" class="screen">
 <h3>Dashboard</h3>
 <p>Email: <span id="uEmail"></span></p>
@@ -57,7 +112,7 @@ button{background:#8f7cff;color:white}
 <div id="myInvestments"></div>
 </div>
 
-<!-- DEPOSIT -->
+<!-- ===== DEPOSIT ===== -->
 <div id="screen-deposit" class="screen">
 <h3>Deposit</h3>
 <div class="card">
@@ -73,7 +128,7 @@ button{background:#8f7cff;color:white}
 </div>
 </div>
 
-<!-- WITHDRAW -->
+<!-- ===== WITHDRAW ===== -->
 <div id="screen-withdraw" class="screen">
 <h3>Withdraw</h3>
 <input id="wAmount" placeholder="Amount">
@@ -84,13 +139,13 @@ Only Sunday | 10AM – 4PM
 </p>
 </div>
 
-<!-- HISTORY -->
+<!-- ===== HISTORY ===== -->
 <div id="screen-history" class="screen">
 <h3>Withdrawal History</h3>
 <div id="withdrawHistory"></div>
 </div>
 
-<!-- SUPPORT -->
+<!-- ===== SUPPORT ===== -->
 <div id="screen-support" class="screen">
 <div class="card" style="text-align:center">
 <p>Customer Support</p>
@@ -99,7 +154,7 @@ Only Sunday | 10AM – 4PM
 </div>
 </div>
 
-<!-- NAV -->
+<!-- ===== NAV ===== -->
 <div class="nav" id="nav" style="display:none">
 <button onclick="show('dashboard')">Home</button>
 <button onclick="show('deposit')">Deposit</button>
@@ -110,210 +165,192 @@ Only Sunday | 10AM – 4PM
 </div>
 
 <script>
-// 🔥 FIREBASE
+// FIREBASE CONFIG
 firebase.initializeApp({
- apiKey: "AIzaSyDcnh5YSeSxmeqyTpdYTMyR4yl_vDj8M-g",
- authDomain: "taskearnapp-1e669.firebaseapp.com",
- databaseURL: "https://taskearnapp-1e669-default-rtdb.firebaseio.com",
- projectId: "taskearnapp-1e669"
+ apiKey:"AIzaSyDcnh5YSeSxmeqyTpdYTMyR4yl_vDj8M-g",
+ authDomain:"taskearnapp-1e669.firebaseapp.com",
+ databaseURL:"https://taskearnapp-1e669-default-rtdb.firebaseio.com",
+ projectId:"taskearnapp-1e669"
 });
 
-const auth = firebase.auth();
-const db = firebase.database();
-const DURATION = 120 * 60 * 60 * 1000;
-let isLogin = true;
-let timers = {};
+const auth=firebase.auth();
+const db=firebase.database();
+const DURATION=120*60*60*1000;
+let isLogin=true,timers={};
 
 function hideAll(){document.querySelectorAll(".screen").forEach(s=>s.style.display="none")}
 function show(n){
-  hideAll();
-  document.getElementById("screen-"+n).style.display="block";
-  if(n==="history") loadWithdrawalHistory();
+ hideAll();
+ document.getElementById("screen-"+n).style.display="block";
+ if(n==="history") loadWithdrawalHistory();
 }
 
 function toggleAuth(){
-  isLogin=!isLogin;
-  authTitle.innerText=isLogin?"Login":"Sign Up";
-  authBtn.innerText=isLogin?"Login":"Sign Up";
+ isLogin=!isLogin;
+ authTitle.innerText=isLogin?"WELCOME":"CREATE ACCOUNT";
+ authBtn.innerText=isLogin?"LOGIN":"SIGN UP";
 }
 
 function submitAuth(){
-  error.innerText="";
-  if(isLogin){
-    auth.signInWithEmailAndPassword(email.value,password.value)
-    .catch(e=>error.innerText=e.message)
-  }else{
-    auth.createUserWithEmailAndPassword(email.value,password.value)
-    .then(r=>{
-      db.ref("users/"+r.user.uid).set({email:r.user.email,balance:0});
-    }).catch(e=>error.innerText=e.message)
-  }
+ error.innerText="";
+ if(isLogin){
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(e=>error.innerText=e.message)
+ }else{
+  auth.createUserWithEmailAndPassword(email.value,password.value)
+  .then(r=>db.ref("users/"+r.user.uid).set({email:r.user.email,balance:0}))
+  .catch(e=>error.innerText=e.message)
+ }
+}
+
+function forgotPassword(){
+ if(!email.value) return alert("Enter email");
+ auth.sendPasswordResetEmail(email.value)
+ .then(()=>alert("Password reset link sent"))
+ .catch(e=>alert(e.message))
 }
 
 auth.onAuthStateChanged(u=>{
-  hideAll(); nav.style.display="none";
-  if(!u){ show("auth"); return; }
-  nav.style.display="flex";
-  uEmail.innerText=u.email;
-  show("dashboard");
-
-  db.ref("users/"+u.uid+"/balance")
-  .on("value",s=>balance.innerText=s.val()||0);
-
-  loadMyInvestments();
+ hideAll();nav.style.display="none";
+ if(!u){show("auth");return;}
+ nav.style.display="flex";
+ uEmail.innerText=u.email;
+ show("dashboard");
+ db.ref("users/"+u.uid+"/balance").on("value",s=>balance.innerText=s.val()||0);
+ loadMyInvestments();
 });
 
 function logout(){auth.signOut()}
 
-// 💰 INVEST (ONLY ONE ACTIVE)
+// ===== ONLY ONE ACTIVE INVESTMENT =====
 function investPlan(amount){
-  const u = auth.currentUser;
-
-  db.ref("users/"+u.uid+"/investments")
-  .orderByChild("status").equalTo("running")
-  .once("value",snap=>{
-    if(snap.exists()){
-      alert("❌ Only one active investment allowed");
-      return;
-    }
-
-    const profit = Math.round(amount*0.30);
-    const total = amount + profit;
-
-    db.ref("users/"+u.uid+"/balance").transaction(b=>{
-      if((b||0) < amount){ alert("Insufficient balance"); return; }
-      return b-amount;
-    },(e,c)=>{
-      if(c){
-        db.ref("users/"+u.uid+"/investments").push({
-          investAmount:amount,
-          returnAmount:total,
-          investTime:Date.now(),
-          status:"running",
-          credited:false
-        });
-        alert("✅ Investment Started");
-      }
+ const u=auth.currentUser;
+ db.ref("users/"+u.uid+"/investments")
+ .orderByChild("status").equalTo("running")
+ .once("value",snap=>{
+  if(snap.exists()){alert("Only one active investment allowed");return;}
+  db.ref("users/"+u.uid+"/balance").transaction(b=>{
+   if((b||0)<amount){alert("Insufficient balance");return;}
+   return b-amount;
+  },(e,ok)=>{
+   if(ok){
+    const profit=Math.round(amount*0.30);
+    db.ref("users/"+u.uid+"/investments").push({
+     investAmount:amount,
+     returnAmount:amount+profit,
+     investTime:Date.now(),
+     status:"running",
+     credited:false
     });
+    alert("Investment Started");
+   }
   });
+ });
 }
 
-// 📊 INVESTMENTS
+// LOAD INVESTMENTS
 function loadMyInvestments(){
-  const u=auth.currentUser;
+ const u=auth.currentUser;
+ myInvestments.innerHTML="";
+ db.ref("users/"+u.uid+"/investments").on("value",snap=>{
   myInvestments.innerHTML="";
-
-  db.ref("users/"+u.uid+"/investments").on("value",snap=>{
-    myInvestments.innerHTML="";
-    if(!snap.exists()){myInvestments.innerText="No investments";return;}
-
-    snap.forEach(c=>{
-      const v=c.val(),id=c.key;
-
-      const end=v.investTime+DURATION;
-      if(Date.now()>=end && !v.credited){
-        db.ref("users/"+u.uid+"/investments/"+id)
-        .update({status:"completed",credited:true});
-        db.ref("users/"+u.uid+"/balance")
-        .transaction(b=>(b||0)+v.returnAmount);
-      }
-
-      myInvestments.innerHTML+=`
-      <div class="card">
-      Invested: ₹${v.investAmount}<br>
-      Return: ₹${v.returnAmount}<br>
-      Status: ${v.status}<br>
-      ⏳ <span id="t${id}"></span>
-      </div>`;
-      setTimeout(()=>startTimer(id,v),100);
-    });
+  if(!snap.exists()){myInvestments.innerText="No investments";return;}
+  snap.forEach(c=>{
+   const v=c.val(),id=c.key,end=v.investTime+DURATION;
+   if(Date.now()>=end && !v.credited){
+    db.ref("users/"+u.uid+"/investments/"+id)
+    .update({status:"completed",credited:true});
+    db.ref("users/"+u.uid+"/balance")
+    .transaction(b=>(b||0)+v.returnAmount);
+   }
+   myInvestments.innerHTML+=`
+   <div class="card">
+   Invested ₹${v.investAmount}<br>
+   Return ₹${v.returnAmount}<br>
+   Status ${v.status}<br>
+   ⏳ <span id="t${id}"></span>
+   </div>`;
+   setTimeout(()=>startTimer(id,v),100);
   });
+ });
 }
 
-// ⏳ TIMER
 function startTimer(id,v){
-  if(timers[id]) return;
-  const el=document.getElementById("t"+id);
-  if(!el) return;
-
-  const end=v.investTime+DURATION;
-  timers[id]=setInterval(()=>{
-    const d=end-Date.now();
-    if(d<=0){
-      el.innerText="Completed";
-      clearInterval(timers[id]);
-      return;
-    }
-    el.innerText=
-      Math.floor(d/3600000)+"h "+
-      Math.floor(d%3600000/60000)+"m "+
-      Math.floor(d%60000/1000)+"s";
-  },1000);
+ if(timers[id])return;
+ const el=document.getElementById("t"+id);
+ if(!el)return;
+ const end=v.investTime+DURATION;
+ timers[id]=setInterval(()=>{
+  const d=end-Date.now();
+  if(d<=0){el.innerText="Completed";clearInterval(timers[id]);return;}
+  el.innerText=
+   Math.floor(d/3600000)+"h "+
+   Math.floor(d%3600000/60000)+"m "+
+   Math.floor(d%60000/1000)+"s";
+ },1000);
 }
 
-// 💳 DEPOSIT
+// DEPOSIT
 function submitDeposit(){
-  if(!depositAmount.value||!utr.value) return alert("Fill all fields");
-  db.ref("deposits").push({
+ if(!depositAmount.value||!utr.value) return alert("Fill all fields");
+ db.ref("deposits").push({
+  uid:auth.currentUser.uid,
+  amount:+depositAmount.value,
+  utr:utr.value,
+  status:"pending",
+  time:Date.now()
+ });
+ alert("Deposit Submitted");
+ show("dashboard");
+}
+
+// WITHDRAW
+function submitWithdraw(){
+ const now=new Date();
+ if(now.getDay()!=0||now.getHours()<10||now.getHours()>=16){
+  alert("Withdraw only Sunday 10AM–4PM");return;
+ }
+ const amt=+wAmount.value,upi=wUpi.value;
+ if(!amt||!upi) return alert("Fill all fields");
+ db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
+  if((b||0)<amt){alert("Insufficient");return;}
+  return b-amt;
+ },(e,ok)=>{
+  if(ok){
+   db.ref("withdrawals").push({
     uid:auth.currentUser.uid,
-    amount:+depositAmount.value,
-    utr:utr.value,
+    amount:amt,
+    upi:upi,
     status:"pending",
     time:Date.now()
-  });
-  alert("Deposit Submitted");
-  show("dashboard");
-}
-
-// 💸 WITHDRAW
-function submitWithdraw(){
-  const now=new Date();
-  if(now.getDay()!=0 || now.getHours()<10 || now.getHours()>=16){
-    alert("Withdraw only Sunday 10AM–4PM");
-    return;
+   });
+   alert("Withdrawal Submitted");
+   show("dashboard");
   }
-  const amt=+wAmount.value,upi=wUpi.value;
-  if(!amt||!upi) return alert("Fill all fields");
-
-  db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
-    if((b||0)<amt){alert("Insufficient");return;}
-    return b-amt;
-  },(e,c)=>{
-    if(c){
-      db.ref("withdrawals").push({
-        uid:auth.currentUser.uid,
-        amount:amt,
-        upi:upi,
-        status:"pending",
-        time:Date.now()
-      });
-      alert("Withdrawal Submitted");
-      show("dashboard");
-    }
-  });
+ });
 }
 
-// 📜 HISTORY
+// HISTORY
 function loadWithdrawalHistory(){
-  withdrawHistory.innerHTML="";
-  db.ref("withdrawals").orderByChild("uid")
-  .equalTo(auth.currentUser.uid)
-  .once("value",s=>{
-    if(!s.exists()){withdrawHistory.innerText="No history";return;}
-    s.forEach(c=>{
-      const w=c.val();
-      withdrawHistory.innerHTML+=`
-      <div class="card">
-      ₹${w.amount}<br>${w.upi}<br>Status: ${w.status}
-      </div>`;
-    });
+ withdrawHistory.innerHTML="";
+ db.ref("withdrawals").orderByChild("uid")
+ .equalTo(auth.currentUser.uid)
+ .once("value",s=>{
+  if(!s.exists()){withdrawHistory.innerText="No history";return;}
+  s.forEach(c=>{
+   const w=c.val();
+   withdrawHistory.innerHTML+=`
+   <div class="card">
+   ₹${w.amount}<br>${w.upi}<br>Status: ${w.status}
+   </div>`;
   });
+ });
 }
 
-// 📞 SUPPORT
 function openWhatsApp(){
-  window.open("https://wa.me/919277169628","_blank");
+ window.open("https://wa.me/919277169628","_blank");
 }
 </script>
+
 </body>
 </html>
