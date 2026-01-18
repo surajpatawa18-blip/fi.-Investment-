@@ -259,55 +259,37 @@ auth.onAuthStateChanged(u=>{
 function logout(){auth.signOut()}
 
 // ===== ONLY ONE ACTIVE INVESTMENT =====
-function getCurrentMonth(){
-  const d = new Date();
-  return d.getFullYear() + "-" + (d.getMonth()+1);
-}
-
 function investPlan(amount){
- const u = auth.currentUser;
- const month = getCurrentMonth();
-
- const userRef = db.ref("users/"+u.uid);
-
- userRef.once("value", snap=>{
-  const data = snap.val() || {};
-
-  if(data.lastInvestmentMonth === month){
-    alert("❌ Is mahine ek hi investment allowed hai");
-    return;
+ const u=auth.currentUser;
+ db.ref("users/"+u.uid+"/investments")
+ .orderByChild("status").equalTo("running")
+ .once("value",snap=>{
+  if(snap.exists()){
+   alert("Only one active investment allowed");
+   return;
   }
-
-  userRef.child("balance").transaction(b=>{
-   if((b||0) < amount){
+  db.ref("users/"+u.uid+"/balance").transaction(b=>{
+   if((b||0)<amount){
     alert("Insufficient balance");
     return;
    }
-   return b - amount;
+   return b-amount;
   },(e,ok)=>{
    if(ok){
-    const profit = Math.round(amount * 0.30);
-
-    userRef.child("investments").push({
-     investAmount: amount,
-     returnAmount: amount + profit,
-     investTime: Date.now(),
-     status: "running",
-     credited: false,
-     month: month
+    const profit=Math.round(amount*0.30);
+    db.ref("users/"+u.uid+"/investments").push({
+     investAmount:amount,
+     returnAmount:amount+profit,
+     investTime:Date.now(),
+     status:"running",
+     credited:false
     });
-
-    userRef.update({
-     lastInvestmentMonth: month
-    });
-
-    alert("✅ Investment started (Monthly limit applied)");
+    alert("Investment Started");
    }
   });
  });
-}
-</script>
-
+  }
+  
 // LOAD INVESTMENTS
 function loadMyInvestments(){
  const u=auth.currentUser;
