@@ -178,27 +178,7 @@ Only Sunday | 10AM – 4PM
 <h3>Withdrawal History</h3>
 <div id="withdrawHistory"></div>
 </div>
-<!-- ===== PAYMENT TRANSFER ===== -->
-<div id="screen-transfer" class="screen">
-<h3>Payment Transfer</h3>
-
-<select id="tAmount">
-  <option value="">Select Amount</option>
-  <option value="400">₹400</option>
-  <option value="700">₹700</option>
-  <option value="1000">₹1000</option>
-</select>
-
-<input id="tUpi" placeholder="Receiver UPI ID">
-
-<button onclick="submitTransfer()">Submit Transfer</button>
-</div>
-  <!-- ===== RECHARGE HISTORY ===== -->
-<div id="screen-recharge-history" class="screen">
-<h3>Recharge History</h3>
-<div id="rechargeHistory"></div>
-</div>
-  
+ 
 <!-- ===== SUPPORT ===== -->
 <div id="screen-support" class="screen">
 <div class="card" style="text-align:center">
@@ -213,11 +193,8 @@ Only Sunday | 10AM – 4PM
 <button onclick="show('dashboard')">Home</button>
 <button onclick="show('deposit')">Deposit</button>
 <button onclick="show('withdraw')">Withdraw</button>
-<button onclick="show('recharge-history')">Recharge History</button>
-<!-- ADD THESE -->
-<button onclick="show('recharge')">Recharge</button>
-<button onclick="show('transfer')">Transfer</button>
 
+<!-- ADD THESE -->
 <button onclick="show('history')">History</button>
 <button onclick="show('support')">Support</button>
 <button onclick="logout()">Logout</button>
@@ -406,75 +383,6 @@ function submitWithdraw(){
   }
  });
 }
-// ===== MOBILE RECHARGE =====
-function submitRecharge(){
- const amt = Number(rAmount.value);
- const mob = rMobile.value;
- const op = rOperator.value;
-
- if(!amt || !mob || !op){
-  alert("Fill all recharge details");
-  return;
- }
-
- db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
-  if((b||0)<amt){
-   alert("Insufficient balance");
-   return;
-  }
-  return b-amt;
- },(e,ok)=>{
-  if(ok){
-   db.ref("recharges").push({
-    uid: auth.currentUser.uid,
-    amount: amt,
-    mobile: mob,
-    operator: op,
-    status: "pending",
-    time: Date.now()
-   });
-   alert("Recharge Request Submitted");
-   show("dashboard");
-  }
- });
-}
-
-// ===== PAYMENT TRANSFER =====
-function submitTransfer(){
- const amt = Number(tAmount.value);
- const upi = tUpi.value;
-
- const allowed = [400,700,1000];
- if(!allowed.includes(amt)){
-  alert("Only ₹400, ₹700, ₹1000 allowed");
-  return;
- }
-
- if(!upi){
-  alert("Enter UPI ID");
-  return;
- }
-
- db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
-  if((b||0)<amt){
-   alert("Insufficient balance");
-   return;
-  }
-  return b-amt;
- },(e,ok)=>{
-  if(ok){
-   db.ref("transfers").push({
-    uid: auth.currentUser.uid,
-    amount: amt,
-    upi: upi,
-    status: "pending",
-    time: Date.now()
-   });
-   alert("Transfer Request Submitted");
-   show("dashboard");
-  }
- });
-  }  
 // HISTORY
 function loadWithdrawalHistory(){
  withdrawHistory.innerHTML="";
@@ -491,34 +399,7 @@ function loadWithdrawalHistory(){
   });
  });
 }
-// ===== RECHARGE HISTORY =====
-function loadRechargeHistory(){
- rechargeHistory.innerHTML = "Loading...";
 
- db.ref("recharges")
- .orderByChild("uid")
- .equalTo(auth.currentUser.uid)
- .once("value", snap=>{
-  rechargeHistory.innerHTML = "";
-
-  if(!snap.exists()){
-   rechargeHistory.innerHTML = "<p>No recharge history</p>";
-   return;
-  }
-
-  snap.forEach(c=>{
-   const r = c.val();
-   rechargeHistory.innerHTML += `
-   <div class="card">
-     ₹${r.amount}<br>
-     📱 ${r.mobile}<br>
-     📡 ${r.operator}<br>
-     Status: <b>${r.status}</b>
-   </div>
-   `;
-  });
- });
-  }
 function openWhatsApp(){
  window.open("https://wa.me/919277169628","_blank");
 }
