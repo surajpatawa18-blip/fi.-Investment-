@@ -147,7 +147,32 @@ button{background:#8f7cff;color:white}
 Only Sunday | 10AM – 4PM
 </p>
 </div>
+  
+<!-- ===== RECHARGE ===== -->
+<div id="screen-recharge" class="screen">
+<h3>Mobile Recharge</h3>
 
+<div class="card">
+<select id="rAmount">
+  <option value="">Select Amount</option>
+  <option value="99">₹99</option>
+  <option value="199">₹199</option>
+  <option value="299">₹299</option>
+</select>
+
+<input id="rMobile" placeholder="Mobile Number">
+<select id="rOperator">
+  <option value="">Select Operator</option>
+  <option value="Jio">Jio</option>
+  <option value="Airtel">Airtel</option>
+  <option value="VI">VI</option>
+  <option value="BSNL">BSNL</option>
+</select>
+
+<button onclick="submitRecharge()">Submit Recharge</button>
+</div>
+</div>
+  
 <!-- ===== HISTORY ===== -->
 <div id="screen-history" class="screen">
 <h3>Withdrawal History</h3>
