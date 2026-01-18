@@ -193,6 +193,11 @@ Only Sunday | 10AM – 4PM
 
 <button onclick="submitTransfer()">Submit Transfer</button>
 </div>
+  <!-- ===== RECHARGE HISTORY ===== -->
+<div id="screen-recharge-history" class="screen">
+<h3>Recharge History</h3>
+<div id="rechargeHistory"></div>
+</div>
   
 <!-- ===== SUPPORT ===== -->
 <div id="screen-support" class="screen">
@@ -486,7 +491,34 @@ function loadWithdrawalHistory(){
   });
  });
 }
+// ===== RECHARGE HISTORY =====
+function loadRechargeHistory(){
+ rechargeHistory.innerHTML = "Loading...";
 
+ db.ref("recharges")
+ .orderByChild("uid")
+ .equalTo(auth.currentUser.uid)
+ .once("value", snap=>{
+  rechargeHistory.innerHTML = "";
+
+  if(!snap.exists()){
+   rechargeHistory.innerHTML = "<p>No recharge history</p>";
+   return;
+  }
+
+  snap.forEach(c=>{
+   const r = c.val();
+   rechargeHistory.innerHTML += `
+   <div class="card">
+     ₹${r.amount}<br>
+     📱 ${r.mobile}<br>
+     📡 ${r.operator}<br>
+     Status: <b>${r.status}</b>
+   </div>
+   `;
+  });
+ });
+  }
 function openWhatsApp(){
  window.open("https://wa.me/919277169628","_blank");
 }
