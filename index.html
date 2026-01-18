@@ -131,9 +131,18 @@ button{background:#8f7cff;color:white}
 <!-- ===== WITHDRAW ===== -->
 <div id="screen-withdraw" class="screen">
 <h3>Withdraw</h3>
-<input id="wAmount" placeholder="Amount">
+
+<select id="wAmount">
+  <option value="">Select Withdraw Amount</option>
+  <option value="400">₹400</option>
+  <option value="700">₹700</option>
+  <option value="1000">₹1000</option>
+</select>
+
 <input id="wUpi" placeholder="UPI ID">
+
 <button onclick="submitWithdraw()">Submit</button>
+
 <p style="text-align:center;font-size:12px;color:#aaa">
 Only Sunday | 10AM – 4PM
 </p>
@@ -308,12 +317,30 @@ function submitDeposit(){
 function submitWithdraw(){
  const now=new Date();
  if(now.getDay()!=0||now.getHours()<10||now.getHours()>=16){
-  alert("Withdraw only Sunday 10AM–4PM");return;
+  alert("Withdraw only Sunday 10AM–4PM");
+  return;
  }
- const amt=+wAmount.value,upi=wUpi.value;
- if(!amt||!upi) return alert("Fill all fields");
+
+ const amt = Number(wAmount.value);
+ const upi = wUpi.value;
+
+ const allowedAmounts = [400,700,1000];
+
+ if(!allowedAmounts.includes(amt)){
+  alert("Withdrawal allowed only for ₹400, ₹700 or ₹1000");
+  return;
+ }
+
+ if(!upi){
+  alert("Enter UPI ID");
+  return;
+ }
+
  db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
-  if((b||0)<amt){alert("Insufficient");return;}
+  if((b||0)<amt){
+   alert("Insufficient balance");
+   return;
+  }
   return b-amt;
  },(e,ok)=>{
   if(ok){
@@ -329,7 +356,7 @@ function submitWithdraw(){
   }
  });
 }
-
+  
 // HISTORY
 function loadWithdrawalHistory(){
  withdrawHistory.innerHTML="";
