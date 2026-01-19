@@ -99,14 +99,14 @@ button{background:#8f7cff;color:white}
 
 <h3>Investment Plans (30% / 120 Hours)</h3>
 
-<div class="card">₹1600 → ₹2000
-<button onclick="investPlan(1600)">Invest</button></div>
+<div class="card">₹1000 → ₹1300
+<button onclick="investPlan(1000)">Invest</button></div>
 
-<div class="card">₹2400 → ₹3100
-<button onclick="investPlan(2400)">Invest</button></div>
+<div class="card">₹1500 → ₹1950
+<button onclick="investPlan(1500)">Invest</button></div>
 
-<div class="card">₹4000→ ₹5100
-<button onclick="investPlan(4000)">Invest</button></div>
+<div class="card">₹3000→ ₹3800
+<button onclick="investPlan(3000)">Invest</button></div>
 
 <h3>My Investments</h3>
 <div id="myInvestments"></div>
@@ -119,9 +119,9 @@ button{background:#8f7cff;color:white}
 <b>Pay UPI:</b><br>9125422244-2@ybl
 <select id="depositAmount">
 <option value="">Select Amount</option>
-<option value="1600">₹1600</option>
-<option value="2400">₹2400</option>
-<option value="4000">₹4000</option>
+<option value="1000">₹1000</option>
+<option value="1500">₹1500</option>
+<option value="3000">₹3000</option>
 </select>
 <input id="utr" placeholder="UTR Number">
 <button onclick="submitDeposit()">Submit</button>
@@ -134,9 +134,9 @@ button{background:#8f7cff;color:white}
 
 <select id="wAmount">
   <option value="">Select Withdraw Amount</option>
-  <option value="400">₹400</option>
-  <option value="700">₹700</option>
-  <option value="1000">₹1000</option>
+  <option value="300">₹300</option>
+  <option value="450">₹450</option>
+  <option value="800">₹800</option>
 </select>
 
 <input id="wUpi" placeholder="UPI ID">
@@ -357,10 +357,10 @@ function submitWithdraw(){
  const amt = Number(wAmount.value);
  const upi = wUpi.value;
 
- const allowedAmounts = [400,700,1000];
+ const allowedAmounts = [300,450,800];
 
  if(!allowedAmounts.includes(amt)){
-  alert("Withdrawal allowed only for ₹400, ₹700 or ₹1000");
+  alert("Withdrawal allowed only for ₹300, ₹450 or ₹800");
   return;
  }
 
