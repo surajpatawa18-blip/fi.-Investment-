@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finvest App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;color:white}
+
+/* ===== LOGIN BACKGROUND IMAGE ===== */
+.auth-bg{
+  background:
+    linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1)),
+    url("login-bg.jpg");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding-left:60px;
+}
+
+.login-card{
+  width:360px;
+}
+
+.login-card h1{
+  margin-bottom:30px;
+  letter-spacing:2px;
+}
+
+.login-card input{
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  background:transparent;
+  border:none;
+  border-bottom:2px solid #f4c430;
+  color:white;
+}
+
+.login-card input::placeholder{color:#ddd}
+
+.login-card button{
+  width:100%;
+  padding:14px;
+  margin-top:25px;
+  background:#f4c430;
+  color:#0b6b5f;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+}
+
+.forgot{text-align:right;font-size:13px;margin-top:8px;cursor:pointer}
+.link{text-align:center;margin-top:15px;cursor:pointer}
+.error{color:red;text-align:center;margin-top:10px}
+
+/* ===== APP UI ===== */
+.screen{display:none;padding:20px;background:#0f1220;min-height:100vh}
+.card{background:#161a2e;padding:20px;border-radius:12px;max-width:360px;margin:15px auto}
+input,button,select{width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px}
+button{background:#8f7cff;color:white}
+.nav{display:flex;justify-content:space-around;background:#161a2e;padding:10px;position:fixed;bottom:0;width:100%}
+.balance{font-size:26px;color:#8f7cff}
+</style>
+</head>
+
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="screen-auth" class="screen auth-bg">
+  <div class="login-card">
+    <h1 id="authTitle">WELCOME</h1>
+
+    <input id="email" placeholder="Username / Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <div class="forgot" onclick="forgotPassword()">Forgot Password?</div>
+
+    <button id="authBtn" onclick="submitAuth()">LOGIN</button>
+
+    <div class="link" onclick="toggleAuth()">Don't have an account? Sign up</div>
+    <div class="error" id="error"></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="screen-dashboard" class="screen">
+<h3>Dashboard</h3>
+<p>Email: <span id="uEmail"></span></p>
+<div class="balance">₹ <span id="balance">0</span></div>
+
+<h3>Investment Plans (30% / 580 Hours)</h3>
+
+<div class="card">₹1600 → ₹2800
+<button onclick="investPlan(1600)">Invest</button></div>
+
+<div class="card">₹2400 → ₹4000
+<button onclick="investPlan(2400)">Invest</button></div>
+
+<div class="card">₹4000→ ₹6000
+<button onclick="investPlan(4000)">Invest</button></div>
+
+<h3>My Investments</h3>
+<div id="myInvestments"></div>
+</div>
+
+<!-- ===== DEPOSIT ===== -->
+<div id="screen-deposit" class="screen">
+<h3>Deposit</h3>
+<div class="card">
+<b>Pay UPI:</b><br>9125422244-2@ybl
+<select id="depositAmount">
+<option value="">Select Amount</option>
+<option value="1600">₹1600</option>
+<option value="2400">₹2400</option>
+<option value="4000">₹4000</option>
+</select>
+<input id="utr" placeholder="UTR Number">
+<button onclick="submitDeposit()">Submit</button>
+</div>
+</div>
+
+<!-- ===== WITHDRAW ===== -->
+<div id="screen-withdraw" class="screen">
+<h3>Withdraw</h3>
+
+<select id="wAmount">
+  <option value="">Select Withdraw Amount</option>
+  <option value="400">₹400</option>
+  <option value="700">₹700</option>
+  <option value="1000">₹1000</option>
+</select>
+
+<input id="wUpi" placeholder="UPI ID">
+
+<button onclick="submitWithdraw()">Submit</button>
+
+<p style="text-align:center;font-size:12px;color:#aaa">
+Only Sunday | 10AM – 4PM
+</p>
+</div>
+  
+<!-- ===== RECHARGE ===== -->
+<div id="screen-recharge" class="screen">
+<h3>Mobile Recharge</h3>
+
+<div class="card">
+<select id="rAmount">
+  <option value="">Select Amount</option>
+  <option value="99">₹99</option>
+  <option value="199">₹199</option>
+  <option value="299">₹299</option>
+</select>
+
+<input id="rMobile" placeholder="Mobile Number">
+<select id="rOperator">
+  <option value="">Select Operator</option>
+  <option value="Jio">Jio</option>
+  <option value="Airtel">Airtel</option>
+  <option value="VI">VI</option>
+  <option value="BSNL">BSNL</option>
+</select>
+
+<button onclick="submitRecharge()">Submit Recharge</button>
+</div>
+</div>
+  
+<!-- ===== HISTORY ===== -->
+<div id="screen-history" class="screen">
+<h3>Withdrawal History</h3>
+<div id="withdrawHistory"></div>
+</div>
+ 
+<!-- ===== SUPPORT ===== -->
+<div id="screen-support" class="screen">
+<div class="card" style="text-align:center">
+<p>Customer Support</p>
+<h2 style="color:#8f7cff">📞 9277169628</h2>
+<button onclick="openWhatsApp()">Chat on WhatsApp</button>
+</div>
+</div>
+
+<!-- ===== NAV ===== -->
+<div class="nav" id="nav" style="display:none">
+<button onclick="show('dashboard')">Home</button>
+<button onclick="show('deposit')">Deposit</button>
+<button onclick="show('withdraw')">Withdraw</button>
+
+<!-- ADD THESE -->
+<button onclick="show('history')">History</button>
+<button onclick="show('support')">Support</button>
+<button onclick="logout()">Logout</button>
+  </div>
+
+<script>
+// FIREBASE CONFIG
+firebase.initializeApp({
+ apiKey:"AIzaSyDcnh5YSeSxmeqyTpdYTMyR4yl_vDj8M-g",
+ authDomain:"taskearnapp-1e669.firebaseapp.com",
+ databaseURL:"https://taskearnapp-1e669-default-rtdb.firebaseio.com",
+ projectId:"taskearnapp-1e669"
+});
+
+const auth=firebase.auth();
+const db=firebase.database();
+const DURATION=120*60*60*1000;
+let isLogin=true,timers={};
+
+function hideAll(){document.querySelectorAll(".screen").forEach(s=>s.style.display="none")}
+function show(n){
+ hideAll();
+ document.getElementById("screen-"+n).style.display="block";
+ if(n==="history") loadWithdrawalHistory();
+}
+
+function toggleAuth(){
+ isLogin=!isLogin;
+ authTitle.innerText=isLogin?"WELCOME":"CREATE ACCOUNT";
+ authBtn.innerText=isLogin?"LOGIN":"SIGN UP";
+}
+
+function submitAuth(){
+ error.innerText="";
+ if(isLogin){
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(e=>error.innerText=e.message)
+ }else{
+  auth.createUserWithEmailAndPassword(email.value,password.value)
+  .then(r=>db.ref("users/"+r.user.uid).set({email:r.user.email,balance:0}))
+  .catch(e=>error.innerText=e.message)
+ }
+}
+
+function forgotPassword(){
+ if(!email.value) return alert("Enter email");
+ auth.sendPasswordResetEmail(email.value)
+ .then(()=>alert("Password reset link sent"))
+ .catch(e=>alert(e.message))
+}
+
+auth.onAuthStateChanged(u=>{
+ hideAll();nav.style.display="none";
+ if(!u){show("auth");return;}
+ nav.style.display="flex";
+ uEmail.innerText=u.email;
+ show("dashboard");
+ db.ref("users/"+u.uid+"/balance").on("value",s=>balance.innerText=s.val()||0);
+ loadMyInvestments();
+});
+
+function logout(){auth.signOut()}
+
+// ===== ONLY ONE ACTIVE INVESTMENT =====
+function investPlan(amount){
+ const u=auth.currentUser;
+ db.ref("users/"+u.uid+"/investments")
+ .orderByChild("status").equalTo("running")
+ .once("value",snap=>{
+  if(snap.exists()){alert("Only one active investment allowed");return;}
+  db.ref("users/"+u.uid+"/balance").transaction(b=>{
+   if((b||0)<amount){alert("Insufficient balance");return;}
+   return b-amount;
+  },(e,ok)=>{
+   if(ok){
+    const profit=Math.round(amount*0.30);
+    db.ref("users/"+u.uid+"/investments").push({
+     investAmount:amount,
+     returnAmount:amount+profit,
+     investTime:Date.now(),
+     status:"running",
+     credited:false
+    });
+    alert("Investment Started");
+   }
+  });
+ });
+}
+
+// LOAD INVESTMENTS
+function loadMyInvestments(){
+ const u=auth.currentUser;
+ myInvestments.innerHTML="";
+ db.ref("users/"+u.uid+"/investments").on("value",snap=>{
+  myInvestments.innerHTML="";
+  if(!snap.exists()){myInvestments.innerText="No investments";return;}
+  snap.forEach(c=>{
+   const v=c.val(),id=c.key,end=v.investTime+DURATION;
+   if(Date.now()>=end && !v.credited){
+    db.ref("users/"+u.uid+"/investments/"+id)
+    .update({status:"completed",credited:true});
+    db.ref("users/"+u.uid+"/balance")
+    .transaction(b=>(b||0)+v.returnAmount);
+   }
+   myInvestments.innerHTML+=`
+   <div class="card">
+   Invested ₹${v.investAmount}<br>
+   Return ₹${v.returnAmount}<br>
+   Status ${v.status}<br>
+   ⏳ <span id="t${id}"></span>
+   </div>`;
+   setTimeout(()=>startTimer(id,v),100);
+  });
+ });
+}
+
+function startTimer(id,v){
+ if(timers[id])return;
+ const el=document.getElementById("t"+id);
+ if(!el)return;
+ const end=v.investTime+DURATION;
+ timers[id]=setInterval(()=>{
+  const d=end-Date.now();
+  if(d<=0){el.innerText="Completed";clearInterval(timers[id]);return;}
+  el.innerText=
+   Math.floor(d/3600000)+"h "+
+   Math.floor(d%3600000/60000)+"m "+
+   Math.floor(d%60000/1000)+"s";
+ },1000);
+}
+
+// DEPOSIT
+function submitDeposit(){
+ if(!depositAmount.value||!utr.value) return alert("Fill all fields");
+ db.ref("deposits").push({
+  uid:auth.currentUser.uid,
+  amount:+depositAmount.value,
+  utr:utr.value,
+  status:"pending",
+  time:Date.now()
+ });
+ alert("Deposit Submitted");
+ show("dashboard");
+}
+
+// WITHDRAW
+function submitWithdraw(){
+ const now=new Date();
+ if(now.getDay()!=0||now.getHours()<10||now.getHours()>=16){
+  alert("Withdraw only Sunday 10AM–4PM");
+  return;
+ }
+
+ const amt = Number(wAmount.value);
+ const upi = wUpi.value;
+
+ const allowedAmounts = [400,700,1000];
+
+ if(!allowedAmounts.includes(amt)){
+  alert("Withdrawal allowed only for ₹400, ₹700 or ₹1000");
+  return;
+ }
+
+ if(!upi){
+  alert("Enter UPI ID");
+  return;
+ }
+
+ db.ref("users/"+auth.currentUser.uid+"/balance").transaction(b=>{
+  if((b||0)<amt){
+   alert("Insufficient balance");
+   return;
+  }
+  return b-amt;
+ },(e,ok)=>{
+  if(ok){
+   db.ref("withdrawals").push({
+    uid:auth.currentUser.uid,
+    amount:amt,
+    upi:upi,
+    status:"pending",
+    time:Date.now()
+   });
+   alert("Withdrawal Submitted");
+   show("dashboard");
+  }
+ });
+}
+// HISTORY
+function loadWithdrawalHistory(){
+ withdrawHistory.innerHTML="";
+ db.ref("withdrawals").orderByChild("uid")
+ .equalTo(auth.currentUser.uid)
+ .once("value",s=>{
+  if(!s.exists()){withdrawHistory.innerText="No history";return;}
+  s.forEach(c=>{
+   const w=c.val();
+   withdrawHistory.innerHTML+=`
+   <div class="card">
+   ₹${w.amount}<br>${w.upi}<br>Status: ${w.status}
+   </div>`;
+  });
+ });
+}
+
+function openWhatsApp(){
+ window.open("https://wa.me/919277169628","_blank");
+}
+</script>
+
+</body>
+</html>
