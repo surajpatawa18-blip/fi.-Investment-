@@ -52,6 +52,12 @@ button{background:#8f7cff;color:white}
  background:#161a2e;padding:10px;
  position:fixed;bottom:0;width:100%
 }
+.uid-code{font-size:32px;letter-spacing:5px;text-align:center;color:#f4c430}
+.copy-btn{
+ background:#f4c430;color:#000;font-weight:bold;
+ margin-top:10px;padding:8px;border-radius:6px;
+ cursor:pointer;border:none;width:100px
+}
 </style>
 </head>
 
@@ -73,6 +79,14 @@ button{background:#8f7cff;color:white}
 <!-- DASHBOARD -->
 <div id="screen-dashboard" class="screen">
 <h3>Dashboard</h3>
+
+<!-- UID Code Card -->
+<div class="card" style="text-align:center">
+<h4>Your UID Code</h4>
+<div class="uid-code" id="uidCodeDisplay">000000</div>
+<button class="copy-btn" onclick="copyUIDCode()">Copy Code</button>
+<small style="color:#aaa;text-align:center;display:block">Your unique identification code</small>
+</div>
 
 <div class="card">
 <h4>Main Wallet</h4>
@@ -162,6 +176,121 @@ const auth=firebase.auth();
 const db=firebase.database();
 const DURATION=120*60*60*1000;
 let isLogin=true,timers={};
+let currentUIDCode = "";
+
+// 6-Digit UID Code Generator
+function generateUIDCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Setup UID Code for user
+function setupUIDCode(userId) {
+    const userRef = db.ref("users/" + userId);
+    
+    userRef.child("uidCode").once("value", (snapshot) => {
+        if (!snapshot.exists()) {
+            // Generate new UID code for new user
+            const newUID = generateUIDCode();
+            userRef.update({ uidCode: newUID });
+            document.getElementById("uidCodeDisplay").innerText = newUID;
+            currentUIDCode = newUID;
+        } else {
+            // Use existing UID code for old user
+            const existingUID = snapshot.val();
+            document.getElementById("uidCodeDisplay").innerText = existingUID;
+            currentUIDCode = existingUID;
+        }
+    });
+}
+
+// Copy UID Code to clipboard
+function copyUIDCode() {
+    if (!currentUIDCode) {
+        alert("UID Code not loaded yet");
+        return;
+    }
+    
+    // Create a temporary input element
+    const tempInput = document.createElement("input");
+    tempInput.value = currentUIDCode;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        // Copy the text
+        const successful = document.execCommand("copy");
+        if (successful) {
+            // Change button text temporarily
+            const copyBtn = document.querySelector('.copy-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = "Copied!";
+            copyBtn.style.background = "#4CAF50";
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = "#f4c430";
+            }, 2000);
+            
+            // Show notification
+            showNotification("UID Code copied to clipboard!");
+        } else {
+            alert("Failed to copy UID Code");
+        }
+    } catch (err) {
+        console.error("Copy failed:", err);
+        alert("Failed to copy UID Code");
+    }
+    
+    // Remove temporary input
+    document.body.removeChild(tempInput);
+}
+
+// Show notification
+function showNotification(message) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 1000;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Add animation style
+    const style = document.createElement("style");
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = "slideOut 0.3s ease";
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
 
 function hideAll(){document.querySelectorAll(".screen").forEach(s=>s.style.display="none")}
 function show(n){hideAll();document.getElementById("screen-"+n).style.display="block"}
@@ -179,8 +308,18 @@ function submitAuth(){
   .catch(e=>error.innerText=e.message);
  }else{
   auth.createUserWithEmailAndPassword(email.value,password.value)
-  .then(r=>db.ref("users/"+r.user.uid)
-   .set({balance:0,profitWallet:0}))
+  .then(r=>{
+      const uidCode = generateUIDCode();
+      currentUIDCode = uidCode;
+      return db.ref("users/"+r.user.uid)
+       .set({
+           balance:0,
+           profitWallet:0,
+           uidCode: uidCode,
+           email: email.value,
+           createdAt: Date.now()
+       });
+  })
   .catch(e=>error.innerText=e.message);
  }
 }
@@ -197,6 +336,9 @@ auth.onAuthStateChanged(u=>{
  if(!u){show("auth");return;}
  nav.style.display="flex";show("dashboard");
 
+ // Setup UID Code
+ setupUIDCode(u.uid);
+ 
  db.ref("users/"+u.uid+"/balance")
  .on("value",s=>mainBalance.innerText=s.val()||0);
  db.ref("users/"+u.uid+"/profitWallet")
