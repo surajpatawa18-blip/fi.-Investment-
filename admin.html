@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Finvest App - Admin Panel</title>
+<title>Finvest Admin Panel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -12,180 +12,82 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial;background:#0f1220;color:white;min-height:100vh;padding:20px}
-
-/* Header */
-.admin-header{
- display:flex;justify-content:space-between;
- align-items:center;padding:15px 20px;
- background:#161a2e;border-radius:10px;
- margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.2)
-}
-.admin-header h1{color:#f4c430}
-
-/* Cards */
-.card{
- background:#161a2e;padding:20px;
- border-radius:12px;margin-bottom:20px;
- box-shadow:0 4px 8px rgba(0,0,0,0.1)
-}
-.card h3{color:#8f7cff;margin-bottom:15px}
-
-/* Inputs & Buttons */
-input,select,button{
- width:100%;padding:12px;margin-top:10px;
- border:none;border-radius:8px;font-size:16px
-}
-input,select{background:#1e2235;color:white}
-button{cursor:pointer;font-weight:bold}
-
-.primary-btn{background:#8f7cff;color:white}
-.add-btn{background:#2ed573;color:white}
-.cut-btn{background:#ff4757;color:white}
-.logout-btn{background:#ff4757;color:white}
-
-/* Search Section */
-.search-container{
- display:flex;gap:10px;margin-top:15px
-}
-.search-container input{flex:1}
-.search-container button{width:auto;padding:12px 20px}
-
-/* User Info */
-.user-info{
- background:#1e2235;padding:20px;border-radius:8px;
- margin:20px 0;border-left:4px solid #8f7cff
-}
-.user-info p{margin:8px 0;font-size:16px}
-.user-info strong{color:#f4c430}
-
-/* Balance Cards */
-.balance-card{
- background:#1a1f38;padding:20px;border-radius:10px;
- margin:15px 0;text-align:center
-}
-.balance-amount{
- font-size:36px;font-weight:bold;color:#2ed573;
- margin:10px 0
-}
-
-/* Action Buttons */
-.action-buttons{
- display:grid;grid-template-columns:1fr 1fr;
- gap:15px;margin-top:15px
-}
-
-/* Users List */
-.users-list{
- max-height:400px;overflow-y:auto;
- background:#1a1f38;border-radius:10px;
- padding:15px;margin-top:15px
-}
-.user-item{
- background:#161a2e;padding:15px;margin:10px 0;
- border-radius:8px;border-left:3px solid #8f7cff
-}
-.user-item p{margin:5px 0}
-.select-btn{
- background:#f4c430;color:#000;padding:8px 15px;
- border-radius:6px;border:none;cursor:pointer;
- margin-top:10px;font-weight:bold
-}
-
-/* Notification */
-.notification{
- position:fixed;top:20px;right:20px;
- background:#4CAF50;color:white;padding:15px 20px;
- border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);
- z-index:1000;display:none;font-weight:bold
-}
+.admin-header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:#161a2e;border-radius:10px;margin-bottom:20px}
+.card{background:#161a2e;padding:20px;border-radius:12px;margin-bottom:20px}
+input,button{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:none}
+input{background:#1e2235;color:white}
+button{font-weight:bold;cursor:pointer}
+.add-btn{background:#2ed573}
+.cut-btn{background:#ff4757}
+.primary-btn{background:#8f7cff}
+.notification{position:fixed;top:20px;right:20px;padding:15px;border-radius:8px;display:none;z-index:99}
 </style>
 </head>
 
 <body>
 
-<!-- Notification -->
 <div id="notification" class="notification"></div>
 
-<!-- Header -->
+<!-- LOGIN -->
+<div id="loginBox" class="card">
+<h2>Admin Login</h2>
+<input id="adminEmail" placeholder="Admin Email">
+<input id="adminPass" type="password" placeholder="Password">
+<button class="primary-btn" onclick="adminLogin()">Login</button>
+</div>
+
+<!-- PANEL -->
+<div id="panel" style="display:none">
+
 <div class="admin-header">
- <h1>Finvest Admin Panel</h1>
- <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+<h2>Finvest Admin Panel</h2>
+<button class="cut-btn" onclick="logoutAdmin()">Logout</button>
 </div>
 
 <div class="card">
- <h2>Search User by UID Code</h2>
- <div class="search-container">
-  <input id="searchUID" placeholder="Enter 6-digit UID Code" maxlength="6" onkeyup="if(event.key==='Enter')searchUserByUID()">
-  <button class="primary-btn" onclick="searchUserByUID()">Search</button>
- </div>
+<h3>Search User (6-digit User Code)</h3>
+<input id="searchUID" maxlength="6" placeholder="Enter 6-digit User Code">
+<button class="primary-btn" onclick="searchUserByUID()">Search</button>
 </div>
 
-<!-- User Details -->
 <div id="userDetails" style="display:none">
- <div class="user-info">
-  <h3>User Details</h3>
-  <p><strong>UID Code:</strong> <span id="foundUID"></span></p>
-  <p><strong>Email:</strong> <span id="foundEmail"></span></p>
-  <p><strong>User ID:</strong> <span id="foundUserId"></span></p>
-  <p><strong>Created:</strong> <span id="foundCreated"></span></p>
- </div>
- 
- <div class="card">
-  <h3>Main Wallet Balance</h3>
-  <div class="balance-card">
-   <div class="balance-amount">₹ <span id="adminMainBalance">0</span></div>
-  </div>
-  <div class="action-buttons">
-   <div>
-    <input id="addMainAmount" placeholder="Amount to add" type="number">
-    <button class="add-btn" onclick="updateBalance('add', 'main')">Add to Main Wallet</button>
-   </div>
-   <div>
-    <input id="cutMainAmount" placeholder="Amount to cut" type="number">
-    <button class="cut-btn" onclick="updateBalance('cut', 'main')">Cut from Main Wallet</button>
-   </div>
-  </div>
- </div>
- 
- <div class="card">
-  <h3>Profit Wallet Balance</h3>
-  <div class="balance-card">
-   <div class="balance-amount">₹ <span id="adminProfitBalance">0</span></div>
-  </div>
-  <div class="action-buttons">
-   <div>
-    <input id="addProfitAmount" placeholder="Amount to add" type="number">
-    <button class="add-btn" onclick="updateBalance('add', 'profit')">Add to Profit Wallet</button>
-   </div>
-   <div>
-    <input id="cutProfitAmount" placeholder="Amount to cut" type="number">
-    <button class="cut-btn" onclick="updateBalance('cut', 'profit')">Cut from Profit Wallet</button>
-   </div>
-  </div>
- </div>
- 
- <div class="card">
-  <h3>Quick Actions</h3>
-  <div class="action-buttons">
-   <button class="add-btn" onclick="addDefaultAmount(1000)">Add ₹1000 to Main</button>
-   <button class="add-btn" onclick="addDefaultAmount(500)">Add ₹500 to Profit</button>
-   <button class="cut-btn" onclick="resetBalances()">Reset Both to Zero</button>
-   <button class="primary-btn" onclick="viewUserInvestments()">View Investments</button>
-  </div>
- </div>
+
+<div class="card">
+<p><b>Email:</b> <span id="foundEmail"></span></p>
+<p><b>User Code:</b> <span id="foundUID"></span></p>
+<p><b>Firebase UID:</b> <span id="foundUserId"></span></p>
 </div>
 
-<!-- All Users -->
 <div class="card">
- <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-  <h3>All Users (Total: <span id="totalUsers">0</span>)</h3>
-  <button class="primary-btn" onclick="loadAllUsers()">Refresh List</button>
- </div>
- <div id="allUsersList" class="users-list"></div>
+<h3>Main Wallet</h3>
+<h1>₹ <span id="adminMainBalance">0</span></h1>
+<input id="addMainAmount" type="number" placeholder="Add amount">
+<button class="add-btn" onclick="updateBalance('add','balance')">Add</button>
+<input id="cutMainAmount" type="number" placeholder="Cut amount">
+<button class="cut-btn" onclick="updateBalance('cut','balance')">Cut</button>
+</div>
+
+<div class="card">
+<h3>Profit Wallet</h3>
+<h1>₹ <span id="adminProfitBalance">0</span></h1>
+<input id="addProfitAmount" type="number" placeholder="Add amount">
+<button class="add-btn" onclick="updateBalance('add','profitWallet')">Add</button>
+<input id="cutProfitAmount" type="number" placeholder="Cut amount">
+<button class="cut-btn" onclick="updateBalance('cut','profitWallet')">Cut</button>
+</div>
+
+<div class="card">
+<h3>Quick Actions</h3>
+<button class="add-btn" onclick="quickAdd('balance',1000)">+₹1000 Main</button>
+<button class="add-btn" onclick="quickAdd('profitWallet',500)">+₹500 Profit</button>
+<button class="cut-btn" onclick="resetBalances()">Reset Both Wallets</button>
+</div>
+
+</div>
 </div>
 
 <script>
-// FIREBASE CONFIG
+// 🔥 FIREBASE CONFIG (same as user app)
 firebase.initializeApp({
  apiKey:"AIzaSyDcnh5YSeSxmeqyTpdYTMyR4yl_vDj8M-g",
  authDomain:"taskearnapp-1e669.firebaseapp.com",
@@ -193,335 +95,137 @@ firebase.initializeApp({
  projectId:"taskearnapp-1e669"
 });
 
-const auth=firebase.auth();
-const db=firebase.database();
+const auth = firebase.auth();
+const db = firebase.database();
 
-// Admin credentials
-const ADMIN_EMAIL = "admin@finvest.com";
-const ADMIN_PASSWORD = "admin123";
+let currentUserId = null;
 
-let currentAdminUser = null;
-
-// Show notification
-function showNotification(message, type = "success") {
-    const notification = document.getElementById("notification");
-    notification.textContent = message;
-    notification.style.display = "block";
-    notification.style.background = type === "error" ? "#ff4757" : "#4CAF50";
-    
-    setTimeout(() => {
-        notification.style.display = "none";
-    }, 3000);
+// 🔔 Notification
+function show(msg,err=false){
+ const n=document.getElementById("notification");
+ n.style.background=err?"#ff4757":"#2ed573";
+ n.innerText=msg;
+ n.style.display="block";
+ setTimeout(()=>n.style.display="none",2500);
 }
 
-// Admin Login (will be called on page load)
-function checkAdminAuth() {
-    // Check if admin is already logged in (from session)
-    const savedAdmin = localStorage.getItem("finvest_admin");
-    
-    if (savedAdmin) {
-        try {
-            currentAdminUser = JSON.parse(savedAdmin);
-            // Auto login with saved credentials
-            adminLoginDirect();
-        } catch (e) {
-            showLoginPrompt();
-        }
-    } else {
-        showLoginPrompt();
-    }
+// 🔐 Admin Login
+function adminLogin(){
+ const e=adminEmail.value,p=adminPass.value;
+ auth.signInWithEmailAndPassword(e,p)
+ .catch(err=>show(err.message,true));
 }
 
-function showLoginPrompt() {
-    const email = prompt("Enter Admin Email:");
-    const password = prompt("Enter Admin Password:");
-    
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        currentAdminUser = { email: email };
-        localStorage.setItem("finvest_admin", JSON.stringify(currentAdminUser));
-        showNotification("Admin login successful!", "success");
-        loadAllUsers();
-    } else {
-        alert("Invalid admin credentials. Please refresh and try again.");
-        showLoginPrompt();
-    }
-}
-
-function adminLoginDirect() {
-    if (currentAdminUser && currentAdminUser.email === ADMIN_EMAIL) {
-        showNotification("Welcome back, Admin!", "success");
-        loadAllUsers();
-    } else {
-        showLoginPrompt();
-    }
-}
-
-// Logout admin
-function logoutAdmin() {
-    currentAdminUser = null;
-    localStorage.removeItem("finvest_admin");
-    alert("Admin logged out. Refresh page to login again.");
-    location.reload();
-}
-
-// Search user by UID code
-function searchUserByUID() {
-    const uidCode = document.getElementById("searchUID").value.trim();
-    
-    if (!uidCode || uidCode.length !== 6) {
-        showNotification("Please enter a valid 6-digit UID code", "error");
-        return;
-    }
-    
-    // Search for user with this UID code
-    db.ref("users").orderByChild("uidCode").equalTo(uidCode).once("value")
-    .then(snapshot => {
-        if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                const userId = child.key;
-                const userData = child.val();
-                
-                // Display user details
-                document.getElementById("foundUID").innerText = userData.uidCode;
-                document.getElementById("foundEmail").innerText = userData.email;
-                document.getElementById("foundUserId").innerText = userId;
-                
-                // Format date
-                if (userData.createdAt) {
-                    const date = new Date(userData.createdAt);
-                    document.getElementById("foundCreated").innerText = 
-                        date.toLocaleDateString() + " " + date.toLocaleTimeString();
-                } else {
-                    document.getElementById("foundCreated").innerText = "N/A";
-                }
-                
-                // Display balances
-                document.getElementById("adminMainBalance").innerText = userData.balance || 0;
-                document.getElementById("adminProfitBalance").innerText = userData.profitWallet || 0;
-                
-                // Store current user ID for balance updates
-                document.getElementById("userDetails").dataset.userId = userId;
-                
-                // Show user details section
-                document.getElementById("userDetails").style.display = "block";
-                
-                // Clear amount inputs
-                document.getElementById("addMainAmount").value = "";
-                document.getElementById("cutMainAmount").value = "";
-                document.getElementById("addProfitAmount").value = "";
-                document.getElementById("cutProfitAmount").value = "";
-                
-                showNotification("User found successfully!", "success");
-            });
-        } else {
-            showNotification("User with this UID code not found", "error");
-            document.getElementById("userDetails").style.display = "none";
-        }
-    })
-    .catch(error => {
-        showNotification("Error searching user: " + error.message, "error");
-    });
-}
-
-// Update user balance (add/cut)
-function updateBalance(action, walletType) {
-    const userId = document.getElementById("userDetails").dataset.userId;
-    
-    if (!userId) {
-        showNotification("Please search for a user first", "error");
-        return;
-    }
-    
-    let amountInput, amount;
-    
-    if (walletType === 'main') {
-        amountInput = action === 'add' ? 'addMainAmount' : 'cutMainAmount';
-    } else {
-        amountInput = action === 'add' ? 'addProfitAmount' : 'cutProfitAmount';
-    }
-    
-    amount = parseFloat(document.getElementById(amountInput).value);
-    
-    if (!amount || amount <= 0) {
-        showNotification("Please enter a valid amount", "error");
-        return;
-    }
-    
-    const userRef = db.ref("users/" + userId);
-    const walletField = walletType === 'main' ? 'balance' : 'profitWallet';
-    
-    userRef.child(walletField).transaction(currentBalance => {
-        let newBalance = parseFloat(currentBalance) || 0;
-        
-        if (action === 'add') {
-            newBalance += amount;
-        } else if (action === 'cut') {
-            if (newBalance < amount) {
-                showNotification("Insufficient balance to cut", "error");
-                return currentBalance; // Abort transaction
-            }
-            newBalance -= amount;
-        }
-        
-        return newBalance;
-    }, (error, committed) => {
-        if (error) {
-            showNotification("Error updating balance: " + error.message, "error");
-        } else if (committed) {
-            showNotification(
-                `${action === 'add' ? 'Added' : 'Cut'} ₹${amount} from ${walletType} wallet successfully`, 
-                "success"
-            );
-            
-            // Clear input
-            document.getElementById(amountInput).value = "";
-            
-            // Refresh user data
-            searchUserByUID();
-        }
-    });
-}
-
-// Quick action: Add default amount
-function addDefaultAmount(amount) {
-    const userId = document.getElementById("userDetails").dataset.userId;
-    
-    if (!userId) {
-        showNotification("Please search for a user first", "error");
-        return;
-    }
-    
-    const userRef = db.ref("users/" + userId);
-    userRef.child("balance").transaction(currentBalance => {
-        let newBalance = parseFloat(currentBalance) || 0;
-        newBalance += amount;
-        return newBalance;
-    }, (error, committed) => {
-        if (committed) {
-            showNotification(`Added ₹${amount} to main wallet`, "success");
-            searchUserByUID();
-        }
-    });
-}
-
-// Reset balances to zero
-function resetBalances() {
-    const userId = document.getElementById("userDetails").dataset.userId;
-    
-    if (!userId) {
-        showNotification("Please search for a user first", "error");
-        return;
-    }
-    
-    if (confirm("Are you sure you want to reset both wallets to zero?")) {
-        const userRef = db.ref("users/" + userId);
-        userRef.update({
-            balance: 0,
-            profitWallet: 0
-        }).then(() => {
-            showNotification("Both wallets reset to zero", "success");
-            searchUserByUID();
-        }).catch(error => {
-            showNotification("Error resetting balances: " + error.message, "error");
-        });
-    }
-}
-
-// View user investments
-function viewUserInvestments() {
-    const userId = document.getElementById("userDetails").dataset.userId;
-    
-    if (!userId) {
-        showNotification("Please search for a user first", "error");
-        return;
-    }
-    
-    db.ref("users/" + userId + "/investments").once("value")
-    .then(snapshot => {
-        let investmentsHTML = "<h4>User Investments:</h4>";
-        
-        if (!snapshot.exists()) {
-            investmentsHTML += "<p>No investments found</p>";
-        } else {
-            snapshot.forEach(child => {
-                const inv = child.val();
-                const date = new Date(inv.investTime).toLocaleString();
-                investmentsHTML += `
-                <div style="background:#1a1f38;padding:10px;margin:10px 0;border-radius:5px">
-                    <p><strong>Amount:</strong> ₹${inv.investAmount}</p>
-                    <p><strong>Profit:</strong> ₹${inv.profit}</p>
-                    <p><strong>Status:</strong> ${inv.status}</p>
-                    <p><strong>Date:</strong> ${date}</p>
-                </div>
-                `;
-            });
-        }
-        
-        alert(investmentsHTML);
-    })
-    .catch(error => {
-        showNotification("Error loading investments: " + error.message, "error");
-    });
-}
-
-// Load all users
-function loadAllUsers() {
-    const usersList = document.getElementById("allUsersList");
-    usersList.innerHTML = "<p style='text-align:center;padding:20px'>Loading users...</p>";
-    
-    db.ref("users").once("value")
-    .then(snapshot => {
-        usersList.innerHTML = "";
-        
-        if (!snapshot.exists()) {
-            usersList.innerHTML = "<p style='text-align:center;padding:20px'>No users found</p>";
-            document.getElementById("totalUsers").innerText = "0";
-            return;
-        }
-        
-        let userCount = 0;
-        snapshot.forEach(child => {
-            userCount++;
-            const userData = child.val();
-            usersList.innerHTML += `
-            <div class="user-item">
-                <p><strong>UID:</strong> ${userData.uidCode || 'N/A'}</p>
-                <p><strong>Email:</strong> ${userData.email || 'N/A'}</p>
-                <p><strong>Main Wallet:</strong> ₹${userData.balance || 0}</p>
-                <p><strong>Profit Wallet:</strong> ₹${userData.profitWallet || 0}</p>
-                <button class="select-btn" onclick="selectUser('${child.key}')">Select User</button>
-            </div>
-            `;
-        });
-        
-        document.getElementById("totalUsers").innerText = userCount;
-        showNotification(`Loaded ${userCount} users`, "success");
-    })
-    .catch(error => {
-        usersList.innerHTML = `<p style="color:#ff4757;text-align:center;padding:20px">Error loading users: ${error.message}</p>`;
-        showNotification("Error loading users", "error");
-    });
-}
-
-// Select user from list
-function selectUser(userId) {
-    db.ref("users/" + userId).once("value")
-    .then(snapshot => {
-        if (snapshot.exists()) {
-            const userData = snapshot.val();
-            document.getElementById("searchUID").value = userData.uidCode || "";
-            searchUserByUID();
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    });
-}
-
-// Initialize admin panel
-document.addEventListener('DOMContentLoaded', function() {
-    checkAdminAuth();
+// 🔄 Auth State
+auth.onAuthStateChanged(u=>{
+ if(u){
+  loginBox.style.display="none";
+  panel.style.display="block";
+ }else{
+  loginBox.style.display="block";
+  panel.style.display="none";
+ }
 });
+
+// 🚪 Logout
+function logoutAdmin(){
+ auth.signOut();
+}
+
+// 🔍 Search User by userCode
+function searchUserByUID(){
+ const code=searchUID.value.trim();
+ if(code.length!==6){
+  show("Enter valid 6-digit code",true);
+  return;
+ }
+
+ db.ref("users")
+ .orderByChild("userCode")
+ .equalTo(code)
+ .once("value",s=>{
+  if(!s.exists()){
+   show("User not found",true);
+   return;
+  }
+
+  s.forEach(c=>{
+   currentUserId=c.key;
+   const d=c.val();
+
+   userDetails.style.display="block";
+   foundEmail.innerText=d.email||"N/A";
+   foundUID.innerText=d.userCode;
+   foundUserId.innerText=currentUserId;
+   adminMainBalance.innerText=d.balance||0;
+   adminProfitBalance.innerText=d.profitWallet||0;
+  });
+ });
+}
+
+// ➕➖ Update Wallet
+function updateBalance(action,field){
+ if(!currentUserId){
+  show("Search user first",true);
+  return;
+ }
+
+ const amt=Number(
+  field==="balance"
+   ? (action==="add"?addMainAmount.value:cutMainAmount.value)
+   : (action==="add"?addProfitAmount.value:cutProfitAmount.value)
+ );
+
+ if(amt<=0){
+  show("Invalid amount",true);
+  return;
+ }
+
+ db.ref("users/"+currentUserId+"/"+field)
+ .transaction(b=>{
+  b=Number(b)||0;
+  if(action==="cut" && b<amt){
+   show("Insufficient balance",true);
+   return;
+  }
+  return action==="add"?b+amt:b-amt;
+ }).then(()=>{
+  show("Wallet updated");
+  searchUserByUID();
+ });
+}
+
+// ⚡ Quick Add
+function quickAdd(field,amt){
+ if(!currentUserId){
+  show("Search user first",true);
+  return;
+ }
+ db.ref("users/"+currentUserId+"/"+field)
+ .transaction(b=>(Number(b)||0)+amt)
+ .then(()=>{
+  show("Amount added");
+  searchUserByUID();
+ });
+}
+
+// ♻ Reset
+function resetBalances(){
+ if(!currentUserId){
+  show("Search user first",true);
+  return;
+ }
+ if(confirm("Reset both wallets?")){
+  db.ref("users/"+currentUserId).update({
+   balance:0,
+   profitWallet:0
+  }).then(()=>{
+   show("Wallets reset");
+   searchUserByUID();
+  });
+ }
+}
 </script>
+
 </body>
-</html><!
+</html>
