@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finvest App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#0b0f3c;color:white}
+.screen{
+ display:none;
+ min-height:100vh;
+ padding:20px;
+ padding-bottom:80px; /* nav ke liye */
+}
+
+#screen-dashboard{
+ background:
+  linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.65)),
+  url("https://raw.githubusercontent.com/surajpatawa18/finvest-app/main/images/dashboard-bg.jpg");
+ background-size: cover;
+ background-position: center;
+ background-repeat: no-repeat;
+ min-height: 100vh;
+}
+.auth-bg{
+ background:linear-gradient(180deg,#3b4fe2,#0b0f3c);
+ display:flex;justify-content:center;align-items:center
+}
+.login-card{
+ width:360px;background:rgba(255,255,255,.12);
+ padding:30px;border-radius:20px
+}
+.login-card input{
+ width:100%;padding:14px;margin-top:15px;
+ border:none;border-radius:12px
+}
+.login-card button{
+ width:100%;padding:14px;margin-top:20px;
+ background:#5f8cff;color:white;
+ border:none;border-radius:14px;font-weight:bold
+}
+
+.card{
+ background:rgba(255,255,255,.15);
+ padding:15px;border-radius:14px;
+ margin-bottom:12px
+}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.invest-btn{
+ background:#f4c430;
+ color:#000;
+ font-weight:bold;
+ border:none;border-radius:10px;
+ padding:12px;width:100%
+}
+.invest-btn.running{
+ background:#ff4d4d;
+ color:white
+}
+
+.timer-box{
+ display:none;
+ margin-bottom:15px;
+ padding:12px;
+ background:#00000099;
+ border-radius:12px;
+ text-align:center;
+ font-size:16px;
+}
+
+.nav{
+ display:flex;justify-content:space-around;
+ position:fixed;bottom:0;width:100%;
+ background:#161a2e;padding:10px
+}
+.nav button{background:none;border:none;color:white}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="screen-auth" class="screen auth-bg">
+ <div class="login-card">
+  <h2 style="text-align:center">Welcome Back</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="submitAuth()">Login</button>
+  <p onclick="toggleAuth()" style="text-align:center;cursor:pointer">Create Account</p>
+  <div id="error" style="color:red;text-align:center"></div>
+ </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dashboard" class="screen">
+ <div style="display:flex;justify-content:space-between">
+  <h3>Dashboard</h3>
+  <div>UID: <span id="userUid"></span></div>
+ </div>
+
+ <div class="grid3">
+  <div class="card">Balance<br>₹ <span id="mainBalance">0</span></div>
+  <div class="card">Wallet<br>₹ <span id="mainBalance2">0</span></div>
+  <div class="card">Profit<br>₹ <span id="profitBalance">0</span></div>
+ </div>
+
+ <div class="grid2">
+  <div class="card" onclick="show('investment')">📈 Investment</div>
+  <div class="card" onclick="show('deposit')">💵 Deposit</div>
+ </div>
+
+ <div class="card" onclick="show('withdraw')">💸 Withdraw</div>
+ <div class="card" onclick="show('withdrawHistory')">💳 Withdrawal History</div>
+ <div class="card" onclick="show('support')">🎧 Customer Service</div>
+</div>
+
+<!-- INVESTMENT -->
+<div id="screen-investment" class="screen">
+<h3>Investment Plans (120 Hours)</h3>
+
+<div id="investmentTimer" class="timer-box">
+ ⏳ Time Left: <span id="timerText">--:--:--</span>
+</div>
+
+<div class="card">
+ ₹1000 → ₹1300
+ <button id="btn1000" class="invest-btn" onclick="investPlan(1000)">Invest</button>
+</div>
+
+<div class="card">
+ ₹1500 → ₹1950
+ <button id="btn1500" class="invest-btn" onclick="investPlan(1500)">Invest</button>
+</div>
+
+<div class="card">
+ ₹3000 → ₹3900
+ <button id="btn3000" class="invest-btn" onclick="investPlan(3000)">Invest</button>
+</div>
+</div>
+
+<!-- DEPOSIT -->
+<div id="screen-deposit" class="screen">
+<h3>Deposit</h3>
+<div class="card">
+<p><b>UPI:</b> 9125422244@ybl</p>
+<select id="dAmount">
+<option value="">Select Amount</option>
+<option value="1000">₹1000</option>
+<option value="1500">₹1500</option>
+<option value="3000">₹3000</option>
+</select>
+<input id="utr" placeholder="UTR Number">
+<button onclick="submitDeposit()">Submit</button>
+</div>
+</div>
+
+<!-- WITHDRAW -->
+<div id="screen-withdraw" class="screen">
+<h3>Withdraw</h3>
+<select id="wAmount">
+<option value="">Select Amount</option>
+<option value="300">₹300</option>
+<option value="450">₹450</option>
+<option value="900">₹900</option>
+</select>
+<input id="wUpi" placeholder="UPI ID">
+<button onclick="submitWithdraw()">Withdraw</button>
+<p style="font-size:12px;text-align:center">Sunday 10AM–4PM</p>
+</div>
+
+<!-- WITHDRAW HISTORY -->
+<div id="screen-withdrawHistory" class="screen">
+<h3>Withdrawal History</h3>
+<div id="withdrawList"></div>
+</div>
+
+<!-- SUPPORT -->
+<div id="screen-support" class="screen">
+<div class="card">
+<h3>Customer Service</h3>
+<p>📞 9277169628</p>
+</div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="nav" style="display:none">
+<button onclick="show('dashboard')">Home</button>
+<button onclick="logout()">Logout</button>
+</div>
+
+<script>
+firebase.initializeApp({
+ apiKey:"AIzaSyDcnh5YSeSxmeqyTpdYTMyR4yl_vDj8M-g",
+ authDomain:"taskearnapp-1e669.firebaseapp.com",
+ databaseURL:"https://taskearnapp-1e669-default-rtdb.firebaseio.com",
+ projectId:"taskearnapp-1e669"
+});
+
+const auth=firebase.auth(),db=firebase.database();
+const INVEST_DURATION = 120 * 60 * 60 * 1000;
+let isLogin=true;
+let timerInterval=null;
+
+function show(n){
+ document.querySelectorAll('.screen').forEach(s=>s.style.display="none");
+ document.getElementById("screen-"+n).style.display="block";
+ if(n==="withdrawHistory") loadWithdrawHistory();
+}
+
+function toggleAuth(){isLogin=!isLogin}
+
+function submitAuth(){
+ if(isLogin){
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(e=>error.innerText=e.message);
+ }else{
+  auth.createUserWithEmailAndPassword(email.value,password.value)
+  .then(r=>{
+   db.ref("users/"+r.user.uid).update({
+    balance:0,
+    profitWallet:0,
+    createdAt:Date.now()
+   });
+  }).catch(e=>error.innerText=e.message);
+ }
+}
+
+auth.onAuthStateChanged(u=>{
+ if(!u){show('auth');return;}
+ nav.style.display="flex";
+ show('dashboard');
+ userUid.innerText=u.uid.slice(0,7);
+
+ db.ref("users/"+u.uid+"/balance").on("value",s=>{
+  mainBalance.innerText=s.val()||0;
+  mainBalance2.innerText=s.val()||0;
+ });
+ db.ref("users/"+u.uid+"/profitWallet").on("value",s=>{
+  profitBalance.innerText=s.val()||0;
+ });
+
+ checkInvestmentCompletion(u.uid);
+
+ db.ref("users/"+u.uid+"/activeInvestment").on("value",snap=>{
+  document.querySelectorAll(".invest-btn").forEach(b=>{
+   if(snap.exists()){
+    const inv=snap.val();
+    b.classList.add("running");
+    b.innerText="Running";
+    b.disabled=true;
+    startInvestmentTimer(inv);
+   }else{
+    b.classList.remove("running");
+    b.innerText="Invest";
+    b.disabled=false;
+    document.getElementById("investmentTimer").style.display="none";
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+   }
+  });
+ });
+});
+
+function logout(){auth.signOut()}
+
+function investPlan(amount){
+ const u=auth.currentUser;
+ db.ref("users/"+u.uid+"/activeInvestment").once("value",snap=>{
+  if(snap.exists()) return alert("Already one investment running");
+
+  db.ref("users/"+u.uid+"/balance").transaction(b=>{
+   if((b||0)<amount) return;
+   return b-amount;
+  },(_,ok)=>{
+   if(ok){
+    db.ref("users/"+u.uid+"/activeInvestment").set({
+     amount:amount,
+     profit:Math.round(amount*0.3),
+     time:Date.now()
+    });
+    alert("Investment started for 120 hours");
+    show('dashboard');
+   }
+  });
+ });
+}
+
+function startInvestmentTimer(inv){
+ const box=document.getElementById("investmentTimer");
+ const text=document.getElementById("timerText");
+ box.style.display="block";
+
+ function update(){
+  const diff=(inv.time+INVEST_DURATION)-Date.now();
+  if(diff<=0){
+   text.innerText="Completed";
+   clearInterval(timerInterval);
+   timerInterval=null;
+   return;
+  }
+  const h=Math.floor(diff/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+  text.innerText=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+ }
+ update();
+ if(timerInterval) clearInterval(timerInterval);
+ timerInterval=setInterval(update,1000);
+}
+
+function checkInvestmentCompletion(uid){
+ db.ref("users/"+uid+"/activeInvestment").once("value",snap=>{
+  if(!snap.exists()) return;
+  const inv=snap.val();
+  if(Date.now()>=inv.time+INVEST_DURATION){
+   db.ref("users/"+uid+"/balance").transaction(b=>(b||0)+inv.amount);
+   db.ref("users/"+uid+"/profitWallet").transaction(p=>(p||0)+inv.profit);
+   db.ref("users/"+uid+"/activeInvestment").remove();
+   alert("Investment completed & profit credited");
+  }
+ });
+}
+
+function submitDeposit(){
+ if(!dAmount.value||!utr.value) return alert("Fill all fields");
+ db.ref("deposits").push({
+  uid:auth.currentUser.uid,
+  amount:+dAmount.value,
+  utr:utr.value,
+  status:"pending",
+  time:Date.now()
+ });
+ alert("Deposit Submitted");
+ show('dashboard');
+}
+
+function submitWithdraw(){
+ const now=new Date();
+ if(now.getDay()!=0) return alert("Sunday only");
+ if(now.getHours()<10||now.getHours()>=16) return alert("10AM–4PM only");
+ if(!wAmount.value||!wUpi.value) return alert("Fill all fields");
+ db.ref("withdrawals").push({
+  uid:auth.currentUser.uid,
+  amount:+wAmount.value,
+  upi:wUpi.value,
+  status:"pending",
+  time:Date.now()
+ });
+ alert("Withdraw Submitted");
+ show('dashboard');
+}
+
+function loadWithdrawHistory(){
+ const u=auth.currentUser;
+ withdrawList.innerHTML="";
+ db.ref("withdrawals").orderByChild("uid").equalTo(u.uid)
+ .on("value",snap=>{
+  withdrawList.innerHTML="";
+  snap.forEach(c=>{
+   const v=c.val();
+   withdrawList.innerHTML+=`
+    <div class="card">
+     Amount: ₹${v.amount}<br>
+     Status: ${v.status}
+    </div>`;
+  });
+ });
+}
+</script>
+
+</body>
+</html>
